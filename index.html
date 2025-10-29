@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>QR-Based Attendance</title>
+<style>
+  body { font-family: Arial, sans-serif; background:#eef2f3; margin:0; padding:20px; text-align:center; }
+  .card { max-width:900px; margin:40px auto; background:white; padding:25px; border-radius:10px; box-shadow:0 6px 18px rgba(0,0,0,0.08); }
+  #timer, #formTimer { font-size:18px; font-weight:600; color:#1f7a8c; }
+  #expired, #formExpired { display:none; color:#c0392b; font-size:20px; margin-top:18px; }
+  iframe { width:100%; height:500px; border:1px solid #ddd; margin-top:12px; border-radius:6px; }
+  .small { font-size:13px; color:#666; margin-top:8px; }
+</style>
+</head>
+<body>
+
+  <!-- QR Section -->
+  <div id="qrSection" class="card">
+    <h2>Scan QR to Mark Attendance</h2>
+    <p id="timer">QR valid for <span id="sec">13</span> seconds</p>
+    <img id="qrCode" src="" alt="QR Code">
+    <p id="expired">⏰ QR Expired! Please contact admin.</p>
+  </div>
+
+  <!-- Form Section -->
+  <div id="formSection" class="card" style="display:none;">
+    <h2>Attendance Form — Scan Successful</h2>
+    <p id="formTimer">Time remaining: <span id="formSec">30</span> seconds</p>
+    <div class="small">Please fill the form within the time limit. After the timer ends, the form will be disabled.</div>
+    <iframe id="formFrame" src="https://forms.gle/sDg3DCBw7NgxdmdZ6">Loading…</iframe>
+    <p id="formExpired">⏰ Time is up — you can no longer access the form.</p>
+  </div>
+
+<script>
+(function(){
+  // STEP 1: Generate a QR that links to the same page, but with ?access=true in the URL
+  const currentURL = window.location.origin + window.location.pathname + "?access=true";
+  document.getElementById("qrCode").src =
+    "https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=" + encodeURIComponent(currentURL);
+
+  // STEP 2: QR visible for 13 seconds
+  let qrSeconds = 13;
+  const qrSec = document.getElementById("sec");
+  const qrImg = document.getElementById("qrCode");
+  const qrTimer = document.getElementById("timer");
+  const qrExpired = document.getElementById("expired");
+  const qrInterval = setInterval(() => {
+    qrSeconds--;
+    qrSec.textContent = qrSeconds;
+    if (qrSeconds <= 0) {
+      clearInterval(qrInterval);
+      qrImg.style.display = "none";
+      qrTimer.style.display = "none";
+      qrExpired.style.display = "block";
+    }
+  }, 1000);
+
+  // STEP 3: If accessed with ?access=true (after scanning QR)
+  const urlParams = new URLSearchParams(window.location.search);
+  if (urlParams.get("access") === "true") {
+    document.getElementById("qrSection").style.display = "none";
+    document.getElementById("formSection").style.display = "block";
+    startFormTimer();
+  }
+
+  // STEP 4: Timer for form (30 seconds)
+  function startFormTimer() {
+    let formSeconds = 30;
+    const formSec = document.getElementById("formSec");
+    const formFrame = document.getElementById("formFrame");
+    const formExpired = document.getElementById("formExpired");
+    const formTimer = document.getElementById("formTimer");
+    const interval = setInterval(() => {
+      formSeconds--;
+      formSec.textContent = formSeconds;
+      if (formSeconds <= 0) {
+        clearInterval(interval);
+        formFrame.style.display = "none";
+        formTimer.style.display = "none";
+        formExpired.style.display = "block";
+      }
+    }, 1000);
+  }
+})();
+</script>
+
+</body>
+</html>
